@@ -36,7 +36,6 @@ Apps.taskmanager = function(off) {
 };
 
 function tmTab(tab) {
-  // Mise à jour du style des onglets
   ['apps','proc','perf'].forEach(t => {
     const el = document.getElementById('tm_tab_' + t);
     if (el) {
@@ -58,14 +57,14 @@ function tmTab(tab) {
   if (!content) return;
 
   if (tab === 'apps') {
-    const currentWindows = Object.values(WM.windows);
+    const currentWindows = Object.entries(WM.windows); // [ [id, w], ... ]
     const rows = currentWindows.length > 0
-      ? currentWindows.map(w => `
+      ? currentWindows.map(([id, w]) => `
           <tr style="cursor:pointer;" onmouseover="this.style.background='#316ac5';this.style.color='white'" onmouseout="this.style.background='';this.style.color=''">
             <td style="border:1px solid #ddd;padding:2px 8px;">${w.icon} ${w.title}</td>
             <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">En cours d'exécution</td>
             <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">
-              <button onclick="WM.close('${w.id}')" style="font-size:10px;padding:2px 6px;cursor:pointer;">Terminer</button>
+              <button onclick="WM.close('${id}')" style="font-size:10px;padding:2px 6px;cursor:pointer;">Terminer</button>
             </td>
           </tr>`).join('')
       : '<tr><td colspan="3" style="padding:8px;color:#999;text-align:center;">Aucune application ouverte</td></tr>';
@@ -182,7 +181,6 @@ function initTMTimer() {
       const s = Math.floor((Date.now() - tmStartTime) / 1000);
       up.textContent = `${Math.floor(s/3600)}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
     }
-    // Mise à jour du contenu dynamique sans perdre l'onglet actif
     const activeTab = ['apps','proc','perf'].find(t => {
       const el = document.getElementById('tm_tab_' + t);
       return el && el.style.background === 'white';

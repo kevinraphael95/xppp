@@ -21,31 +21,35 @@ Apps.taskmanager = function(off) {
         </div>
       </div>
       <div id="tm_tabs_taskmgr" style="display:flex;background:#ece9d8;border-bottom:1px solid #aaa;padding:4px 4px 0;">
-        <div style="padding:4px 12px;cursor:pointer;border:1px solid #aaa;border-bottom:none;border-radius:4px 4px 0 0;font-size:11px;margin-right:2px;background:white;margin-bottom:-1px;" onclick="tmTab(this,'apps')" id="tm_tab_apps">Applications</div>
-        <div style="padding:4px 12px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;font-size:11px;margin-right:2px;" onclick="tmTab(this,'proc')" id="tm_tab_proc">Processus</div>
-        <div style="padding:4px 12px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;font-size:11px;margin-right:2px;" onclick="tmTab(this,'perf')" id="tm_tab_perf">Performances</div>
+        <div style="padding:4px 12px;cursor:pointer;border:1px solid #aaa;border-bottom:none;border-radius:4px 4px 0 0;font-size:11px;margin-right:2px;background:white;margin-bottom:-1px;" onclick="tmTab('apps')" id="tm_tab_apps">Applications</div>
+        <div style="padding:4px 12px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;font-size:11px;margin-right:2px;" onclick="tmTab('proc')" id="tm_tab_proc">Processus</div>
+        <div style="padding:4px 12px;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;font-size:11px;margin-right:2px;" onclick="tmTab('perf')" id="tm_tab_perf">Performances</div>
       </div>
       <div id="tm_content" style="padding:8px;flex:1;overflow:auto;"></div>
       <div style="height:22px;background:#ece9d8;border-top:1px solid #bbb;display:flex;align-items:center;padding:0 8px;gap:16px;">
         <span style="font-size:10px;" id="tm_cpu_bar">Utilisation processeur : 15%</span>
         <span style="font-size:10px;" id="tm_mem_bar">Mémoire : 268 Mo / 512 Mo</span>
-        <span style="font-size:10px;" id="tm_proc_count">Processus : ${8 + Object.keys(WM.windows).length}</span>
+        <span style="font-size:10px;" id="tm_proc_count">Processus : ${Object.keys(WM.windows).length}</span>
       </div>
     </div>
-  `, { onOpen: () => setTimeout(() => { tmTab(null, 'apps'); initTMTimer(); }, 50) });
+  `, { onOpen: () => setTimeout(() => { tmTab('apps'); initTMTimer(); }, 50) });
 };
 
-function tmTab(btn, tab) {
-  // Update tab styles
+function tmTab(tab) {
+  // Mise à jour du style des onglets
   ['apps','proc','perf'].forEach(t => {
     const el = document.getElementById('tm_tab_' + t);
     if (el) {
       if (t === tab) {
-        el.style.background = 'white'; el.style.border = '1px solid #aaa';
-        el.style.borderBottom = '1px solid white'; el.style.marginBottom = '-1px';
+        el.style.background = 'white'; 
+        el.style.border = '1px solid #aaa';
+        el.style.borderBottom = '1px solid white'; 
+        el.style.marginBottom = '-1px';
       } else {
-        el.style.background = ''; el.style.border = '1px solid transparent';
-        el.style.borderBottom = 'none'; el.style.marginBottom = '0';
+        el.style.background = ''; 
+        el.style.border = '1px solid transparent';
+        el.style.borderBottom = 'none'; 
+        el.style.marginBottom = '0';
       }
     }
   });
@@ -54,14 +58,15 @@ function tmTab(btn, tab) {
   if (!content) return;
 
   if (tab === 'apps') {
-    const savedWindows = State.getOpenWindows();
     const currentWindows = Object.values(WM.windows);
     const rows = currentWindows.length > 0
       ? currentWindows.map(w => `
           <tr style="cursor:pointer;" onmouseover="this.style.background='#316ac5';this.style.color='white'" onmouseout="this.style.background='';this.style.color=''">
             <td style="border:1px solid #ddd;padding:2px 8px;">${w.icon} ${w.title}</td>
             <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">En cours d'exécution</td>
-            <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">${w.minimized ? 'Réduit' : 'Normal'}</td>
+            <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">
+              <button onclick="WM.close('${w.id}')" style="font-size:10px;padding:2px 6px;cursor:pointer;">Terminer</button>
+            </td>
           </tr>`).join('')
       : '<tr><td colspan="3" style="padding:8px;color:#999;text-align:center;">Aucune application ouverte</td></tr>';
 
@@ -70,13 +75,10 @@ function tmTab(btn, tab) {
         <tr style="background:#ece9d8;">
           <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Tâche</th>
           <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Statut</th>
-          <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Mode</th>
+          <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Action</th>
         </tr>
         ${rows}
       </table>
-      <div style="display:flex;gap:4px;margin-top:8px;justify-content:flex-end;">
-        <button onclick="openApp('notepad')" style="padding:4px 12px;font-size:11px;font-family:Tahoma;border:1px solid #888;background:linear-gradient(180deg,#f0ede4 0%,#d8d4c8 100%);cursor:pointer;">Nouvelle tâche...</button>
-      </div>
     `;
   } else if (tab === 'proc') {
     const baseProcs = [
@@ -90,7 +92,6 @@ function tmTab(btn, tab) {
       ['explorer.exe', '1156', '2%', '15 624 Ko'],
       ['taskmgr.exe', '2044', '3%', '3 000 Ko'],
     ];
-    // Add open windows as processes
     const winProcs = Object.values(WM.windows).map(w => [
       w.title.toLowerCase().replace(/ /g,'') + '.exe',
       String(Math.floor(Math.random() * 3000 + 1000)),
@@ -139,7 +140,7 @@ function tmTab(btn, tab) {
           <tr><td style="padding:2px 0;color:#555;">Mémoire physique totale :</td><td><b>524 288 Ko</b></td></tr>
           <tr><td style="padding:2px 0;color:#555;">Mémoire disponible :</td><td><b>256 020 Ko</b></td></tr>
           <tr><td style="padding:2px 0;color:#555;">Charge du système :</td><td><b>52 %</b></td></tr>
-          <tr><td style="padding:2px 0;color:#555;">Processus en cours :</td><td><b id="tm_pcount">${9 + Object.keys(WM.windows).length}</b></td></tr>
+          <tr><td style="padding:2px 0;color:#555;">Processus en cours :</td><td><b id="tm_pcount">${Object.keys(WM.windows).length}</b></td></tr>
           <tr><td style="padding:2px 0;color:#555;">Durée de fonctionnement :</td><td><b id="tm_uptime">0:00:00</b></td></tr>
         </table>
       </div>
@@ -175,12 +176,18 @@ function initTMTimer() {
     const cpuPct = document.getElementById('tm_cpu_pct');
     if (cpuPct) cpuPct.textContent = cpu + '%';
     const procCount = document.getElementById('tm_proc_count');
-    if (procCount) procCount.textContent = `Processus : ${9 + Object.keys(WM.windows).length}`;
+    if (procCount) procCount.textContent = `Processus : ${Object.keys(WM.windows).length}`;
     const up = document.getElementById('tm_uptime');
     if (up) {
       const s = Math.floor((Date.now() - tmStartTime) / 1000);
       up.textContent = `${Math.floor(s/3600)}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
     }
+    // Mise à jour du contenu dynamique sans perdre l'onglet actif
+    const activeTab = ['apps','proc','perf'].find(t => {
+      const el = document.getElementById('tm_tab_' + t);
+      return el && el.style.background === 'white';
+    }) || 'apps';
+    tmTab(activeTab);
   }, 2000);
   window._tmTimer = timer;
 }
@@ -190,5 +197,5 @@ function tmRefresh() {
     const el = document.getElementById('tm_tab_' + t);
     return el && el.style.background === 'white';
   }) || 'apps';
-  tmTab(null, activeTab);
+  tmTab(activeTab);
 }

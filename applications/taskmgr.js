@@ -1,5 +1,5 @@
 // ============================================================
-// TASK MANAGER DYNAMIQUE
+// TASK MANAGER
 // ============================================================
 Apps.taskmanager = function(off) {
   const id = 'taskmgr';
@@ -9,14 +9,8 @@ Apps.taskmanager = function(off) {
       <div class="menubar">
         <div class="menu-item" onclick="toggleMenu(this)">Fichier
           <div class="dropdown">
-            <div class="dd-item" onclick="openApp('notepad')">Nouvelle tâche (Exécuter...)</div>
             <div class="dd-item separator"></div>
             <div class="dd-item" onclick="WM.close('taskmgr')">Quitter le Gestionnaire des tâches</div>
-          </div>
-        </div>
-        <div class="menu-item" onclick="toggleMenu(this)">Affichage
-          <div class="dropdown">
-            <div class="dd-item" onclick="tmRefresh()">Actualiser maintenant</div>
           </div>
         </div>
       </div>
@@ -61,21 +55,17 @@ function tmTab(tab) {
       ? windows.map(w => `
         <tr onmouseover="this.style.background='#316ac5';this.style.color='white'" onmouseout="this.style.background='';this.style.color=''">
           <td style="border:1px solid #ddd;padding:2px 8px;">${w.icon} ${w.title}</td>
-          <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">En cours</td>
-          <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">${w.minimized ? 'Réduit' : 'Normal'}</td>
           <td style="border:1px solid #ddd;padding:2px 8px;text-align:center;">
             <button onclick="tmKillApp('${w.id}')" style="font-size:10px;padding:2px 6px;">Terminer</button>
           </td>
         </tr>
       `).join('')
-      : `<tr><td colspan="4" style="padding:8px;color:#999;text-align:center;">Aucune application ouverte</td></tr>`;
+      : `<tr><td colspan="2" style="padding:8px;color:#999;text-align:center;">Aucune application ouverte</td></tr>`;
 
     content.innerHTML = `
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <tr style="background:#ece9d8;">
           <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Tâche</th>
-          <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Statut</th>
-          <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Mode</th>
           <th style="border:1px solid #bbb;padding:2px 8px;text-align:left;">Action</th>
         </tr>
         ${rows}
@@ -124,7 +114,6 @@ function tmTab(tab) {
 // ============================================================
 function tmKillApp(id) {
   if (WM.windows[id]) WM.close(id);
-  tmTab(document.querySelector('#tm_tabs_taskmgr .menu-item.active')?.id?.split('_')[2] || 'apps');
 }
 
 // ============================================================
@@ -141,6 +130,8 @@ function initTMTimer() {
     if(memBar) memBar.textContent = `Mémoire : ${mem*10} Mo / 512 Mo`;
     const procCount = document.getElementById('tm_proc_count');
     if(procCount) procCount.textContent = `Processus : ${Object.keys(WM.windows).length}`;
-    tmTab(document.querySelector('#tm_tabs_taskmgr .menu-item.active')?.id?.split('_')[2] || 'apps');
+    // mise à jour dynamique des tabs apps/proc sans refresh
+    const activeTab = ['apps','proc','perf'].find(t => document.getElementById('tm_tab_'+t).style.background==='white');
+    if(activeTab) tmTab(activeTab);
   }, 2000);
 }
